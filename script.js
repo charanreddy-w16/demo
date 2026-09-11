@@ -8,9 +8,26 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Chrome (and other browsers) render high-DPI / retina screens at a
+// devicePixelRatio > 1. Without accounting for this the canvas looks
+// blurry on such displays. We size the backing buffer to the real pixel
+// count and scale the drawing context back down so all existing drawing
+// code (which uses CSS-pixel coordinates) keeps working unchanged.
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  // Real backing-buffer resolution (physical pixels) — keeps Chrome/Retina crisp
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+  // CSS display size stays at logical pixels
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  // Scale drawing operations so all game code below can keep using CSS-pixel coordinates
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Game-logic space (what all spawn/collision code below reads)
+  canvas.gameWidth = w;
+  canvas.gameHeight = h;
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
@@ -43,6 +60,12 @@ const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new AudioCtx();
+  // Chrome's autoplay policy can leave the context "suspended" even when
+  // created inside a user-gesture handler — explicitly resume it so sound
+  // reliably plays on the very first interaction.
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
   return audioCtx;
 }
 
@@ -130,11 +153,11 @@ const SWEET_SHAPES = ['ladoo', 'barfi', 'jalebi'];
 
 function initBackground() {
   bgSweets = [];
-  const count = Math.max(6, Math.floor((canvas.width * canvas.height) / 160000));
+  const count = Math.max(6, Math.floor((canvas.gameWidth * canvas.gameHeight) / 160000));
   for (let i = 0; i < count; i++) {
     bgSweets.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: Math.random() * canvas.gameWidth,
+      y: Math.random() * canvas.gameHeight,
       r: Math.random() * 18 + 14,
       speed: Math.random() * 0.25 + 0.05,
       drift: Math.random() * Math.PI * 2,
@@ -143,11 +166,11 @@ function initBackground() {
     });
   }
   dust = [];
-  const dustCount = Math.floor((canvas.width * canvas.height) / 9000);
+  const dustCount = Math.floor((canvas.gameWidth * canvas.gameHeight) / 9000);
   for (let i = 0; i < dustCount; i++) {
     dust.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: Math.random() * canvas.gameWidth,
+      y: Math.random() * canvas.gameHeight,
       r: Math.random() * 1.4 + 0.3,
       speed: Math.random() * 0.4 + 0.1,
       alpha: Math.random() * 0.3 + 0.1,
@@ -162,11 +185,11 @@ function updateBackground() {
     s.drift += 0.005;
     s.y += s.speed;
     s.x += Math.sin(s.drift) * 0.15;
-    if (s.y - s.r > canvas.height) { s.y = -s.r; s.x = Math.random() * canvas.width; }
+    if (s.y - s.r > canvas.gameHeight) { s.y = -s.r; s.x = Math.random() * canvas.gameWidth; }
   }
   for (const d of dust) {
     d.y += d.speed;
-    if (d.y > canvas.height) { d.y = 0; d.x = Math.random() * canvas.width; }
+    if (d.y > canvas.gameHeight) { d.y = 0; d.x = Math.random() * canvas.gameWidth; }
   }
 }
 
@@ -182,23 +205,23 @@ function drawSilhouetteSweet(s) {
 
 function drawBackground() {
   // Deep gradient sky — cold and oppressive
-  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.gameHeight);
   grad.addColorStop(0, '#05070c');
   grad.addColorStop(0.55, '#0a0d16');
   grad.addColorStop(1, '#020202');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.gameWidth, canvas.gameHeight);
 
   // Faint god-rays from top
   ctx.save();
   ctx.globalAlpha = 0.05;
   for (let i = 0; i < 3; i++) {
-    const gx = canvas.width * (0.25 + i * 0.25);
-    const beam = ctx.createLinearGradient(gx, 0, gx, canvas.height);
+    const gx = canvas.gameWidth * (0.25 + i * 0.25);
+    const beam = ctx.createLinearGradient(gx, 0, gx, canvas.gameHeight);
     beam.addColorStop(0, 'rgba(216,184,119,0.5)');
     beam.addColorStop(1, 'rgba(216,184,119,0)');
     ctx.fillStyle = beam;
-    ctx.fillRect(gx - 60, 0, 120, canvas.height);
+    ctx.fillRect(gx - 60, 0, 120, canvas.gameHeight);
   }
   ctx.restore();
 
@@ -212,12 +235,12 @@ function drawBackground() {
   }
 
   // Ground shadow platform where Bheem stands
-  const groundY = canvas.height - 10;
-  const groundGrad = ctx.createRadialGradient(canvas.width / 2, groundY, 10, canvas.width / 2, groundY, canvas.width * 0.6);
+  const groundY = canvas.gameHeight - 10;
+  const groundGrad = ctx.createRadialGradient(canvas.gameWidth / 2, groundY, 10, canvas.gameWidth / 2, groundY, canvas.gameWidth * 0.6);
   groundGrad.addColorStop(0, 'rgba(0,0,0,0.9)');
   groundGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, groundY - 60, canvas.width, 70);
+  ctx.fillRect(0, groundY - 60, canvas.gameWidth, 70);
 }
 
 // ===========================================================
@@ -237,8 +260,8 @@ const player = {
 };
 
 function resetPlayer() {
-  player.x = canvas.width / 2 - player.w / 2;
-  player.y = canvas.height - player.h - 14;
+  player.x = canvas.gameWidth / 2 - player.w / 2;
+  player.y = canvas.gameHeight - player.h - 14;
   player.reaching = null;
   player.reachTimer = 0;
   player.shield = false; player.shieldTimer = 0;
@@ -462,7 +485,7 @@ function spawnLadoo() {
   ladoos.push({
     type: typeKey,
     letter,
-    x: Math.random() * (canvas.width - t.r * 2) + t.r,
+    x: Math.random() * (canvas.gameWidth - t.r * 2) + t.r,
     y: -t.r,
     r: t.r,
     speed: t.speed * difficultyMult,
@@ -481,11 +504,11 @@ function updateLadoos() {
     l.spin += 0.03;
   }
   for (let i = ladoos.length - 1; i >= 0; i--) {
-    if (ladoos[i].y - ladoos[i].r > canvas.height) {
+    if (ladoos[i].y - ladoos[i].r > canvas.gameHeight) {
       const l = ladoos[i];
       // Cursed ladoos reaching the ground are a relief, not a loss
       if (l.type !== 'cursed') {
-        spawnSplat(l.x, canvas.height - 12, l.color);
+        spawnSplat(l.x, canvas.gameHeight - 12, l.color);
         SFX.miss();
         damagePlayer(10);
       }
@@ -572,12 +595,12 @@ function spawnPowerup() {
     attempts++;
   } while (used.has(letter) && attempts < 30);
 
-  powerups.push({ ...def, letter, x: Math.random() * (canvas.width - 60) + 30, y: -30, r: 22, speed: 1.6 });
+  powerups.push({ ...def, letter, x: Math.random() * (canvas.gameWidth - 60) + 30, y: -30, r: 22, speed: 1.6 });
 }
 
 function updatePowerups() {
   powerups.forEach(p => p.y += p.speed);
-  powerups = powerups.filter(p => p.y < canvas.height + 40);
+  powerups = powerups.filter(p => p.y < canvas.gameHeight + 40);
 }
 
 function drawPowerups() {
@@ -878,9 +901,10 @@ function buildMobileKeyboard() {
     const btn = document.createElement('button');
     btn.className = 'key-btn';
     btn.textContent = letter;
+    // pointerdown unifies touch/mouse/pen in one event across Chrome, so we
+    // avoid the double-fire that touchstart + mousedown can cause together.
     const fire = (e) => { e.preventDefault(); tryGrabLetter(letter); };
-    btn.addEventListener('touchstart', fire, { passive: false });
-    btn.addEventListener('mousedown', fire);
+    btn.addEventListener('pointerdown', fire, { passive: false });
     mobileKeyboard.appendChild(btn);
   });
 }
