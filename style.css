@@ -15,6 +15,16 @@ html, body {
   overflow: hidden;
   background: #000;
   font-family: 'Oswald', Arial, sans-serif;
+  /* Chrome (especially on Android) allows pinch-zoom, double-tap-zoom and
+     pull-to-refresh by default; these fight with rapid key-tapping and the
+     on-screen keyboard, so they're disabled here. */
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+}
+
+#game-container, #mobileKeyboard, .key-btn, .main-btn, .icon-btn {
+  touch-action: none;
 }
 
 #game-container {
