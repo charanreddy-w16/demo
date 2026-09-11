@@ -1,179 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#17102b">
-  <title>Ladoo Collector — BHEEM</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LADDU RAJ — The Sweet Reckoning</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-icon">🍬</div>
-        <div>
-          <h1>LADOO <span>COLLECTOR</span></h1>
-          <p>Type the letter. Grab the ladoo. Save your health.</p>
+
+<div id="game-container">
+
+  <!-- Canvas: cinematic background, particles, character, ladoos -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Film-grain / vignette overlay for the IMAX look -->
+  <div id="filmGrain"></div>
+  <div id="vignette"></div>
+  <div id="flash"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-item">SCORE<span id="score">0</span></div>
+      <div class="hud-item">HIGH SCORE<span id="highScore">0</span></div>
+    </div>
+
+    <div class="hud-center">
+      <div class="title-small">LADDU RAJ</div>
+      <div class="level-badge">CHAPTER <span id="level">1</span></div>
+    </div>
+
+    <div class="hud-right">
+      <div class="health-wrap">
+        <span class="health-label">LIFE FORCE</span>
+        <div class="health-bar-bg">
+          <div id="healthBar" class="health-bar-fill"></div>
         </div>
       </div>
-      <div class="top-actions">
-        <button id="soundBtn" class="icon-btn" title="Toggle sound">🔊</button>
-        <button id="helpBtn" class="icon-btn" title="How to play">?</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="hud">
-        <div class="stat-card">
-          <span>SCORE</span><strong id="score">0</strong>
-        </div>
-        <div class="stat-card">
-          <span>HIGH SCORE</span><strong id="highScore">0</strong>
-        </div>
-        <div class="stat-card level-card">
-          <span>LEVEL</span><strong id="level">1</strong>
-          <div class="level-track"><i id="levelProgress"></i></div>
-        </div>
-        <div class="stat-card health-card">
-          <span>HEALTH</span>
-          <div class="health-row">
-            <div class="health-track"><i id="healthFill"></i></div>
-            <strong id="healthText">100</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="game-wrap">
-        <div id="game" class="game" aria-label="Ladoo Collector game area">
-          <div class="sun-glow"></div>
-          <div class="cityline"></div>
-          <div class="bg-sweets" aria-hidden="true">
-            <span class="sweet s1">🍮</span><span class="sweet s2">🍨</span>
-            <span class="sweet s3">🧁</span><span class="sweet s4">🍰</span>
-            <span class="sweet s5">🍩</span><span class="sweet s6">🥨</span>
-          </div>
-
-          <!-- Animated winged spider-hero easter egg -->
-          <div class="spider-hero" aria-hidden="true">
-            <div class="wing wing-l"></div><div class="wing wing-r"></div>
-            <div class="hero-head">🕷️</div>
-            <div class="hero-body">🕸️</div>
-          </div>
-
-          <div id="powerStatus" class="power-status"></div>
-          <div id="particles" class="particles"></div>
-          <div id="ladooLayer"></div>
-
-          <div id="player" class="player">
-            <div class="cape"></div>
-            <div class="arm arm-left"></div>
-            <div class="arm arm-right"></div>
-            <div class="hand hand-left">✋</div>
-            <div class="hand hand-right">✋</div>
-            <div class="body">
-              <div class="shirt">BHEEM</div>
-              <div class="belt"></div>
-            </div>
-            <div class="head">🙂</div>
-          </div>
-
-          <div class="floor"><div class="floor-glow"></div></div>
-
-          <div id="startOverlay" class="overlay active">
-            <div class="overlay-card">
-              <div class="mascot">💪🏽🍬</div>
-              <div class="eyebrow">ARCADE EDITION</div>
-              <h2>LADOO<br><span>COLLECTOR</span></h2>
-              <p>Help <b>BHEEM</b> catch falling ladoos by typing the letter printed on each one.</p>
-              <div class="mini-rules">
-                <span>⌨️ Type letter</span><span>⚡ Power-ups</span><span>❤️ Don't miss!</span>
-              </div>
-              <button id="startBtn" class="primary-btn">START GAME <span>▶</span></button>
-              <p class="hint">Starts gently. Gets spicy as your score climbs.</p>
-            </div>
-          </div>
-
-          <div id="pauseOverlay" class="overlay">
-            <div class="overlay-card compact">
-              <div class="pause-icon">Ⅱ</div>
-              <h2>GAME PAUSED</h2>
-              <p>Your ladoos are waiting.</p>
-              <button id="resumeBtn" class="primary-btn">RESUME <span>▶</span></button>
-            </div>
-          </div>
-
-          <div id="gameOverOverlay" class="overlay">
-            <div class="overlay-card gameover-card">
-              <div class="danger">☠</div>
-              <div class="eyebrow">RUN COMPLETE</div>
-              <h2>AAPKA<br><span>SKILL ISSUE HAI</span></h2>
-              <div class="final-score">
-                <span>FINAL SCORE</span><strong id="finalScore">0</strong>
-              </div>
-              <div id="newRecord" class="record">🏆 NEW HIGH SCORE!</div>
-              <button id="restartBtn" class="primary-btn">PLAY AGAIN <span>↻</span></button>
-            </div>
-          </div>
-        </div>
-
-        <aside class="side-panel">
-          <div class="panel-box">
-            <div class="panel-title"><span>POWER-UPS</span><b>ACTIVE</b></div>
-            <div id="powerList" class="power-list">
-              <div class="power-item" data-power="rapid"><i>⚡</i><span><b>RAPID FIRE</b><small>Faster grab window</small></span><em id="rapidTimer">—</em></div>
-              <div class="power-item" data-power="shield"><i>🛡️</i><span><b>SHIELD</b><small>Blocks one miss</small></span><em id="shieldTimer">—</em></div>
-              <div class="power-item" data-power="double"><i>×2</i><span><b>DOUBLE SCORE</b><small>2× points</small></span><em id="doubleTimer">—</em></div>
-            </div>
-          </div>
-
-          <div class="panel-box controls-box">
-            <div class="panel-title"><span>CONTROLS</span></div>
-            <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>F</kbd><span>or any ladoo letter</span></div>
-            <div class="mobile-note">On mobile: use ◀ ▶ and GRAB.</div>
-          </div>
-
-          <div class="panel-box legend">
-            <div class="panel-title"><span>LADOO TYPES</span></div>
-            <div><b>🟡 Classic</b><span>1 HP · 10 pts</span></div>
-            <div><b>🟠 Golden</b><span>2 HP · 20 pts</span></div>
-            <div><b>🔴 Fiery</b><span>3 HP · 35 pts</span></div>
-            <div><b>💠 Crystal</b><span>1 HP · 50 pts</span></div>
-          </div>
-        </aside>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <span>TIP: Focus on the letter — not the ladoo. 🍬</span>
-      <div>
-        <button id="pauseBtn" class="small-btn">Ⅱ PAUSE</button>
-        <button id="restartSmallBtn" class="small-btn">↻ RESTART</button>
-      </div>
-    </footer>
-  </div>
-
-  <div id="helpModal" class="modal">
-    <div class="modal-card">
-      <button id="closeHelp" class="close">×</button>
-      <h2>HOW TO PLAY</h2>
-      <p>Each ladoo has a glowing letter. Type that letter to grab it. Missed ladoos reduce health.</p>
-      <ul>
-        <li>⚡ <b>Rapid Fire:</b> makes the grab animation snappier.</li>
-        <li>🛡️ <b>Shield:</b> absorbs one missed ladoo.</li>
-        <li>×2 <b>Double Score:</b> doubles points temporarily.</li>
-        <li>🔥 The higher your score, the faster and denser the rain.</li>
-      </ul>
-      <p class="modal-tip">On phones, use the three touch buttons at the bottom of the game.</p>
+      <div id="activePowerups" class="active-powerups"></div>
     </div>
   </div>
 
-  <div id="touchControls" class="touch-controls">
-    <button data-action="left">◀</button>
-    <button data-action="grab">GRAB</button>
-    <button data-action="right">▶</button>
+  <div id="controlButtons">
+    <button id="pauseBtn" class="icon-btn" title="Pause">&#10074;&#10074;</button>
+    <button id="restartBtn" class="icon-btn" title="Restart">&#8635;</button>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Start Screen -->
+  <div id="startScreen" class="overlay-screen">
+    <div class="title-block">
+      <h1 class="game-title">LADDU<span>RAJ</span></h1>
+      <p class="tagline">Every sweet you drop... is a sweet you owe him.</p>
+    </div>
+    <div class="controls-hint">
+      <p>Ladoos fall from the sky, each branded with a letter.</p>
+      <p><span class="key">TYPE</span> the letter to make him snatch it from the air.</p>
+      <p>Miss one, and he loses his strength.</p>
+    </div>
+    <button id="startBtn" class="main-btn">BEGIN THE RECKONING</button>
+  </div>
+
+  <!-- Pause Screen -->
+  <div id="pauseScreen" class="overlay-screen hidden">
+    <h2 class="paused-title">PAUSED</h2>
+    <p class="subtle-line">The sky holds its breath.</p>
+    <button id="resumeBtn" class="main-btn">RESUME</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameOverScreen" class="overlay-screen hidden">
+    <h2 class="gameover-title">AAPKA SKILL ISSUE HAI</h2>
+    <p class="final-score-label">FINAL SCORE</p>
+    <p id="finalScore" class="final-score">0</p>
+    <p id="newHighScore" class="new-high hidden">★ A NEW LEGEND IS WRITTEN ★</p>
+    <button id="restartFromGameOverBtn" class="main-btn">FACE HIM AGAIN</button>
+  </div>
+
+  <!-- On-screen keyboard for mobile / touch devices -->
+  <div id="mobileKeyboard"></div>
+
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
